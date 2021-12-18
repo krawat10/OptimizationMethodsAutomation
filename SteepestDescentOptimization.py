@@ -4,41 +4,40 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 
 from Model import Model
+from Plotter import Plotter
 
 
 class SteepestDescentOptimization:
-    def __init__(self, model):
+    def __init__(self, model: Model):
         self.model = model
+        self.plotter = Plotter(model)
 
     def solve(self):
         print('SteepestDescentOptimization')
         guesses = [np.array([self.model.e0, self.model.w0])]
+        # guesses = [np.array([1.25, 1])]
         #
         # Steepest Descent
         for i in range(0, 5):
             x = guesses[-1]
             s = np.array([
-                -self.model.gain_func_partial_derivative(1, [0.15894737, x[0], x[1]]),
-                -self.model.gain_func_partial_derivative(2, [0.15894737, x[0], x[1]])
+                -self.model.gain_func_partial_derivative(1, [self.model.k0, x[0], x[1]]),
+                -self.model.gain_func_partial_derivative(2, [self.model.k0, x[0], x[1]])
             ])
 
-            #
             def f1d(alpha):
-                p = [0.15894737, *(x + alpha * s)]
-                return self.model.gain_func_scalar(p)
+                return self.model.quality_indicator([self.model.k0, *(x + alpha * s)])
 
-            #
             alpha_opt = optimize.golden(f1d)
             next_guess = x + alpha_opt * s
             guesses.append(next_guess)
-            #
             print(next_guess)
         #
 
-        plt.contour(self.model.XX, self.model.YY, self.model.ZZ.transpose(), 50)
-        it_array = np.array(guesses)
-        plt.plot(it_array.T[0], it_array.T[1], "x-")
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.title('SteepestDescentOptimization')
-        plt.show()
+        self.plotter.plot([self.model.k0, guesses[-1][0], guesses[-1][1]], 'Steepest Descent')
+
+        print('finish optimization (minimize)')
+        print(f'Optimization for k:{self.model.k0:.8f}, e:{guesses[-1][0]:.8f}, w:{guesses[-1][1]:.8f}')
+        self.plotter.plot([self.model.k0, guesses[-1][0], guesses[-1][1]], 'Steepest Descent')
+        self.plotter.e_w_scatter_area(np.array(guesses), 'Steepest Descent', True)
+

@@ -1,15 +1,29 @@
+
+
 from GradientDescentOptimization import GradientDescentOptimization
+from LevenbergMarquardtOptimization import LevenbergMarquardtOptimization
 from MinimizeOptimization import MinimizeOptimization
 from Model import Model
-from SolveArea import SolveArea
+from Plotter import Plotter
 from SteepestDescentOptimization import SteepestDescentOptimization
 
-model = Model(1000)
-model.mesh()
-
+model = Model()
+model.generate_mesh()
 MinimizeOptimization(model).solve()
-SolveArea(model).solve()
+Plotter(model).e_w_solve_area()
+Plotter(model).k_w_solve_area()
+#
+
 GradientDescentOptimization(model).solve()
 SteepestDescentOptimization(model).solve()
+LevenbergMarquardtOptimization(model).solve()
+
+
+
+
+#
+
+
+
 
 
