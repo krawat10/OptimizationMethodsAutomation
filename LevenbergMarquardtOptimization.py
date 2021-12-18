@@ -55,7 +55,7 @@ class LevenbergMarquardtOptimization:
         llambda = 1e-2
 
         lambda_multiplier = 10
-        kmax = 40
+        kmax = 100
 
         # Equality : (JtJ + lambda * I * diag(JtJ)) * delta = Jt * error
         # Solve for delta

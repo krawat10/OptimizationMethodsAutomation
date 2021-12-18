@@ -24,7 +24,7 @@ class Plotter:
         plt.xlabel('Time')
         plt.ylabel('Response (y)')
         plt.title(f'{title} response for params k:{p[0]:.4f}, e:{p[1]:.4f}, w:{p[2]:.4f}')
-        plt.savefig(f'plot-{title}.png')
+        plt.savefig(f'images/plot-{title}.png')
         plt.show()
 
     def e_w_solve_area(self, title="Solve Area"):
@@ -46,7 +46,7 @@ class Plotter:
         ax.set_ylabel('w')
         ax.set_zlabel('J')
         ax.set_title(title)
-        plt.savefig(f'ew_solve-{title}.png')
+        plt.savefig(f'images/ew_solve-{title}.png')
         plt.show()
 
     def k_w_solve_area(self, title="Solve Area"):
@@ -67,10 +67,10 @@ class Plotter:
         ax.set_ylabel('w')
         ax.set_zlabel('J')
         ax.set_title(title)
-        plt.savefig(f'kw_solve-{title}.png')
+        plt.savefig(f'images/kw_solve-{title}.png')
         plt.show()
 
-    def e_w_scatter_area(self, points: np.array, title="Solve Area", connect = False):
+    def e_w_scatter_area(self, points: np.array, title="Solve Area", connect=False):
         plt.contourf(self.model.EE, self.model.WW, self.model.EW.transpose())
 
         if connect:
@@ -82,7 +82,7 @@ class Plotter:
         plt.xlabel('e')
         plt.ylabel('w')
         plt.title(title)
-        plt.savefig(f'ew_scatter-{title}.png')
+        plt.savefig(f'images/ew_scatter-{title}.png')
         plt.show()
 
     def e_w_gradient_area(self, points: np.array, title="Solve Area"):
@@ -96,5 +96,5 @@ class Plotter:
         plt.ylabel('w', fontsize=11)
         plt.colorbar()
         plt.legend(loc="upper right")
-        plt.savefig(f'ew_gradient-{title}.png')
+        plt.savefig(f'images/ew_gradient-{title}.png')
         plt.show()
