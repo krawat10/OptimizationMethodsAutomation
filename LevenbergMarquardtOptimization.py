@@ -14,27 +14,34 @@ class LevenbergMarquardtOptimization:
         self.model = model
         self.plotter = Plotter(model)
 
-    def numerical_differentiation(self, p):
+    def numerical_differentiation2(self, params):
+        J = np.empty(shape=(len(params), self.model.size))
+        J[0] = self.model.partial_derivative_e([self.model.k0, *params])
+        J[1] = self.model.partial_derivative_w([self.model.k0, *params])
+
+        return J
+
+    def numerical_differentiation(self, params):
         """ Numerical Differentiation
         Note: we are passing in the effor function for the model we are using, but
         we can substitute the error for the actual model function
             error(x + delta) - error(x) <==> f(x + delta) - f(x)
-        :param p: values to be used in model
+        :param params: values to be used in model
         :param args: input (x) and observations (y)
         :param error_function: function used to determine error based on params and observations
         :return: The jacobian for the error_function
         """
         delta_factor = 1e-3
-        min_delta = 1e-4
+        min_delta = 1e-3
 
         # Compute error
-        y_0 = self.model.error_function([self.model.k0, p[0], p[1]])
+        y_0 = self.model.list_of_abs_difference([self.model.k0, *params])
 
         # Jacobian
-        J = np.empty(shape=(len(p),) + y_0.shape, dtype=np.float)
+        J = np.empty(shape=(len(params),) + y_0.shape, dtype=np.float)
 
-        for i, param in enumerate(p):
-            params_star = p[:]
+        for i, param in enumerate(params):
+            params_star = params[:]
             delta = param * delta_factor
 
             if abs(delta) < min_delta:
@@ -42,7 +49,7 @@ class LevenbergMarquardtOptimization:
 
             # Update single param and calculate error with updated value
             params_star[i] += delta
-            y_1 = self.model.error_function([self.model.k0, params_star[0], params_star[1]])
+            y_1 = self.model.list_of_abs_difference([self.model.k0, *params_star])
 
             # Update Jacobian with gradients
             diff = y_0 - y_1
@@ -51,46 +58,40 @@ class LevenbergMarquardtOptimization:
         return J
 
     def solve(self):
-        points = [np.array([self.model.e0, self.model.w0])]
-        llambda = 1e-2
-
+        points = []
+        params = np.array([self.model.e0, self.model.w0])
+        kmax = 10
+        llambda = 100
         lambda_multiplier = 10
-        kmax = 100
-
-        # Equality : (JtJ + lambda * I * diag(JtJ)) * delta = Jt * error
-        # Solve for delta
-        params = [self.model.e0, self.model.w0]
-
         k = 0
         while k < kmax:
             k += 1
             points.append(np.array(params))
             # Retrieve jacobian of function gradients with respect to the params
             J = self.numerical_differentiation(params)
-            Jt_x_J = inner(J, J)
+            JtJ = inner(J, J)
 
             # I * diag(JtJ)
-            A = eye(len(params)) * diag(Jt_x_J)
+            A = eye(len(params)) * diag(JtJ)
 
             # == Jt * error
-            error = self.model.error_function([self.model.k0, params[0], params[1]])
-            J_x_error = inner(J, error)
+            error = self.model.list_of_abs_difference([self.model.k0, *params])
+            Jerror = inner(J, error)
 
             rmserror = norm(error)
-
             print("{} RMS: {} Params: {}".format(k, rmserror, params))
 
             rmserror_star = rmserror + 1
             while rmserror_star >= rmserror:
                 try:
-                    delta = solve(Jt_x_J + llambda * A, J_x_error)
+                    delta = solve(JtJ + llambda * A, Jerror)
                 except np.linalg.LinAlgError:
                     print("Error: Singular Matrix")
-                    break
+                    return -1
 
                 # Update params and calculate new error
                 params_star = params[:] + delta[:]
-                error_star = self.model.error_function([self.model.k0, params_star[0], params_star[1]])
+                error_star = self.model.list_of_abs_difference([self.model.k0, *params_star])
                 rmserror_star = norm(error_star)
 
                 if rmserror_star < rmserror:
@@ -106,8 +107,7 @@ class LevenbergMarquardtOptimization:
                     break
 
             reduction = abs(rmserror - rmserror_star)
-            # if reduction < 1e-18:
-            if reduction < 1e-8:
+            if reduction < 1e-18:
                 print("Change in error too small")
                 break
 

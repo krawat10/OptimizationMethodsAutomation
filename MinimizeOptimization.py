@@ -62,6 +62,6 @@ class MinimizeOptimization:
         # optimization
         result = minimize(self.model.quality_indicator, x0, method='Nelder-Mead')
         # self.model.k0, self.model.e0, self.model.w0 = result.x
-        print('finish optimization (minimize)')
-        print(f'Optimization for k:{self.model.k0:.8f}, e:{self.model.e0:.8f}, w:{self.model.w0:.8f}')
-        self.plotter.plot(result.x, 'Nelder-Mead')
+        # print('finish optimization (minimize)')
+        # print(f'Optimization for k:{self.model.k0:.8f}, e:{self.model.e0:.8f}, w:{self.model.w0:.8f}')
+        # self.plotter.plot(result.x, 'Nelder-Mead')

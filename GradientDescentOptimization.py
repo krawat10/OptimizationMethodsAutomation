@@ -17,32 +17,34 @@ class GradientDescentOptimization:
 
     def solve(self):
         print('Gradient Descent Solve')
-        points = [np.array([self.model.e0, self.model.w0])]
-        alpha = 0.1  # learning rate
-        nb_max_iter = 100  # Nb max d'iteration
-        eps = 0.0001  # stop condition
-
-        e = self.model.e0  # start point
+        # initial points
+        e = self.model.e0
         w = self.model.w0
-        z0 = self.model.quality_indicator([self.model.k0, e, w])
+        z = self.model.quality_indicator([self.model.k0, e, w])
 
-        points.append(np.array([e, w]))
-        cond = eps + 10.0  # start with cond greater than eps (assumption)
-        nb_iter = 0
-        tmp_z0 = z0
-        while cond > eps and nb_iter < nb_max_iter:
-            tmp_e = e - alpha * self.model.gain_func_partial_derivative(1, [self.model.k0, e, w])
-            tmp_w = w - alpha * self.model.gain_func_partial_derivative(2, [self.model.k0, e, w])
+        points = [np.array([e, w])]
 
-            e = tmp_e
-            w = tmp_w
+        alpha = 0.1  # learning rate
+        max_iter = 40  # Nb max d'iteration
+        eps = 0.0001  # stop condition
+        z0 = z
 
-            z0 = self.model.quality_indicator([self.model.k0, e, w])
-            nb_iter = nb_iter + 1
-            cond = abs(tmp_z0 - z0)
-            tmp_z0 = z0
+        for i in range(0, max_iter):
+            # tmp_e = e - alpha * self.model.gain_func_partial_derivative(1, [self.model.k0, e, w])
+            e = e - alpha * np.sum(self.model.partial_derivative_e([self.model.k0, e, w]))
+            # tmp_w = w - alpha * (self.model.gain_func_partial_derivative(2, [self.model.k0, e, w]))
+            w = w - alpha * np.sum(self.model.partial_derivative_w([self.model.k0, e, w]))
+
+            z = self.model.quality_indicator([self.model.k0, e, w])
+
+            cond = abs(z0 - z)
+            z0 = z
             print(e, w, cond)
             points.append(np.array([e, w]))
+
+            print(f'Gradient Descent iteration {i + 1}')
+            if cond < eps:
+                break
 
         self.plotter.e_w_gradient_area(points, 'Gradient Descent')
         self.plotter.plot([self.model.k0, e, w], 'Gradient Descent')

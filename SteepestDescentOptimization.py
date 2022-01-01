@@ -21,8 +21,8 @@ class SteepestDescentOptimization:
         for i in range(0, 5):
             x = guesses[-1]
             s = np.array([
-                -self.model.gain_func_partial_derivative(1, [self.model.k0, x[0], x[1]]),
-                -self.model.gain_func_partial_derivative(2, [self.model.k0, x[0], x[1]])
+                -np.sum(self.model.partial_derivative_e([self.model.k0, x[0], x[1]])),
+                -np.sum(self.model.partial_derivative_w([self.model.k0, x[0], x[1]]))
             ])
 
             def f1d(alpha):
