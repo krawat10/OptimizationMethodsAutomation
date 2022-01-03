@@ -22,43 +22,44 @@ class LevenbergMarquardtOptimization:
         return J
 
     def numerical_differentiation(self, params):
-        delta_factor = 1e-3
-        min_delta = 1e-3
+        delta_factor = 1e-4
+        min_delta = 1e-4
 
-        # Compute error
-        y_0 = self.model.list_of_abs_difference([self.model.k0, *params])
+        # Get response with given params
+        y_0, dy_0, ddy_0 = self.model.integrate([self.model.k0, *params])
 
-        # Jacobian
+        # Initialize Jacobian Matrix
         J = np.empty(shape=(len(params),) + y_0.shape, dtype=np.float)
 
         for i, param in enumerate(params):
-            params_star = params[:]
+            new_params = params[:]
             delta = param * delta_factor
 
             if abs(delta) < min_delta:
                 delta = min_delta
 
             # Update single param and calculate error with updated value
-            params_star[i] += delta
-            y_1 = self.model.list_of_abs_difference([self.model.k0, *params_star])
+            new_params[i] += delta
 
-            # Update Jacobian with gradients
-            J[i] = (y_0 - y_1) / delta
+            # Get response for f(x, B + delta)
+            y_1, dy_1, ddy_1 = self.model.integrate([self.model.k0, *new_params])
 
-        # J[0] = self.model.partial_derivative_e_2([self.model.k0, *params])
-        # J[1] = self.model.partial_derivative_w_2([self.model.k0, *params])
+            # Update Jacobian with partial derivatives
+            J[i] = (y_1 - y_0) / delta
+
         return J
 
     def solve(self):
         points = []
         params = np.array([self.model.e0, self.model.w0])
         kmax = 10
-        llambda = 100
-        lambda_multiplier = 10
-        k = 0
-        while k < kmax:
-            k += 1
+        eps = 1e-18
+        llambda = 10
+        llambda_multiplier = 5
+
+        for k in range(0, kmax):
             points.append(np.array(params))
+
             # Retrieve jacobian of function gradients with respect to the params
             J = self.numerical_differentiation(params)
             JtJ = inner(J, J)
@@ -66,44 +67,37 @@ class LevenbergMarquardtOptimization:
             # I * diag(JtJ)
             A = eye(len(params)) * diag(JtJ)
 
-            # == Jt * error
-            error = self.model.list_of_abs_difference([self.model.k0, *params])
+            # == Jt * [y - f(B)]
+            error = self.model.list_of_difference([self.model.k0, *params])
             Jerror = inner(J, error)
+            norm_error = norm(error)
+            norm_new_error = norm_error
 
-            rmserror = norm(error)
-            print("{} RMS: {} Params: {}".format(k, rmserror, params))
-
-            rmserror_star = rmserror + 1
-            while rmserror_star >= rmserror:
-                try:
-                    delta = solve(JtJ + llambda * A, Jerror)
-                except np.linalg.LinAlgError:
-                    print("Error: Singular Matrix")
-                    return -1
+            print(f'{k}, J: {self.model.quality_indicator([self.model.k0, *params])} RMS: {norm_error},  Params: {params}')
+            while norm_new_error >= norm_error:
+                delta = solve(JtJ + llambda * A, Jerror)
 
                 # Update params and calculate new error
-                params_star = params[:] + delta[:]
-                error_star = self.model.list_of_abs_difference([self.model.k0, *params_star])
-                rmserror_star = norm(error_star)
+                new_params = params[:] + delta[:]
+                norm_new_error = norm(self.model.list_of_difference([self.model.k0, *new_params]))
 
-                if rmserror_star < rmserror:
-                    params = params_star
-                    llambda /= lambda_multiplier
-                    break
-
-                llambda *= lambda_multiplier
+                if norm_new_error < norm_error:
+                    params = new_params
+                    llambda /= llambda_multiplier
+                else:
+                    llambda *= llambda_multiplier
 
                 # Return if lambda explodes or if change is small
                 if llambda > 1e9:
                     print("Lambda to large.")
                     break
 
-            reduction = abs(rmserror - rmserror_star)
-            if reduction < 1e-18:
+            reduction = abs(norm_error - norm_new_error)
+            if reduction < eps:
                 print("Change in error too small")
                 break
 
         print('finish optimization (minimize)')
         print(f'Optimization for k:{self.model.k0:.8f}, e:{params[0]:.8f}, w:{params[1]:.8f}')
         self.plotter.plot([self.model.k0, params[0], params[1]], 'Levenberg Marquardt')
-        self.plotter.e_w_scatter_area(points, 'Levenberg Marquardt', True)
+        self.plotter.e_w_gradient_area(points, 'Levenberg Marquardt')

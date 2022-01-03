@@ -127,7 +127,13 @@ class Model:
     def list_of_abs_difference(self, p):
         y, dy, ddy = self.integrate(p)
 
-        return np.abs((y - self.data['y']))
+        return np.abs(self.data['y'] - y)
+
+    def list_of_difference(self, p):
+        y, dy, ddy = self.integrate(p)
+
+        return self.data['y'] - y
+
 
     def gain_func_partial_derivative(self, var, p, dx=1e-1):
         args = p[:]
