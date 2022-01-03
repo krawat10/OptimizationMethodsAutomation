@@ -25,7 +25,7 @@ class GradientDescentOptimization:
         points = [np.array([e, w])]
 
         alpha = 0.1  # learning rate
-        max_iter = 40  # Nb max d'iteration
+        max_iter = 40  # max iteration
         eps = 0.0001  # stop condition
         z0 = z
 

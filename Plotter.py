@@ -20,6 +20,7 @@ class Plotter:
         plt.plot(time, self.model.data['y'].values, 'b-', linewidth=1, label='y(t)')
         plt.plot(time, self.model.data['u'].values, 'g-', linewidth=1, label='u(t)')
         # plt.xlim([0, max(self.data['t'].head(400).values)])
+        plt.legend(loc="upper right")
         plt.ylim([-0.2, 0.2])
         plt.xlabel('Time')
         plt.ylabel('Response (y)')

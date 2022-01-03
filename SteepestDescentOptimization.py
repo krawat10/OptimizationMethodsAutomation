@@ -14,30 +14,40 @@ class SteepestDescentOptimization:
 
     def solve(self):
         print('SteepestDescentOptimization')
-        guesses = [np.array([self.model.e0, self.model.w0])]
-        # guesses = [np.array([1.25, 1])]
-        #
-        # Steepest Descent
-        for i in range(0, 5):
-            x = guesses[-1]
-            s = np.array([
-                -np.sum(self.model.partial_derivative_e([self.model.k0, x[0], x[1]])),
-                -np.sum(self.model.partial_derivative_w([self.model.k0, x[0], x[1]]))
-            ])
+        e = self.model.e0
+        w = self.model.w0
+        z0 = self.model.quality_indicator([self.model.k0, e, w])
 
-            def f1d(alpha):
-                return self.model.quality_indicator([self.model.k0, *(x + alpha * s)])
+        points = [np.array([self.model.e0, self.model.w0])]
 
-            alpha_opt = optimize.golden(f1d)
-            next_guess = x + alpha_opt * s
-            guesses.append(next_guess)
-            print(next_guess)
-        #
+        max_iter = 40  # max iteration
+        eps = 0.0001  # stop condition
 
-        self.plotter.plot([self.model.k0, guesses[-1][0], guesses[-1][1]], 'Steepest Descent')
+        for i in range(0, max_iter):
+            partial_derivative_e = np.sum(self.model.gain_func_partial_derivative(1, [self.model.k0, e, w], 1e-1))
+            partial_derivative_w = np.sum(self.model.gain_func_partial_derivative(2, [self.model.k0, e, w], 1e-1))
+
+            best_alpha = optimize.golden(lambda alpha: self.model.quality_indicator([
+                self.model.k0,
+                e - alpha * partial_derivative_e,
+                w - alpha * partial_derivative_w]))
+
+            e = e - best_alpha * partial_derivative_e
+            w = w - best_alpha * partial_derivative_w
+            z = self.model.quality_indicator([self.model.k0, e, w])
+
+            cond = abs(z0 - z)
+            z0 = z
+            print(e, w, cond)
+            points.append(np.array([e, w]))
+
+            print(f'Steepest Descent iteration {i + 1}')
+            if cond < eps:
+                break
+
+        self.plotter.plot([self.model.k0, points[-1][0], points[-1][1]], 'Steepest Descent')
 
         print('finish optimization (minimize)')
-        print(f'Optimization for k:{self.model.k0:.8f}, e:{guesses[-1][0]:.8f}, w:{guesses[-1][1]:.8f}')
-        self.plotter.plot([self.model.k0, guesses[-1][0], guesses[-1][1]], 'Steepest Descent')
-        self.plotter.e_w_scatter_area(np.array(guesses), 'Steepest Descent', True)
-
+        print(f'Optimization for J:{z0} k:{self.model.k0:.8f}, e:{points[-1][0]:.8f}, w:{points[-1][1]:.8f}')
+        self.plotter.plot([self.model.k0, points[-1][0], points[-1][1]], f'Steepest Descent for k:{self.model.k0}')
+        self.plotter.e_w_gradient_area(np.array(points), f'Steepest Descent for k:{self.model.k0}')

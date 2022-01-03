@@ -22,15 +22,6 @@ class LevenbergMarquardtOptimization:
         return J
 
     def numerical_differentiation(self, params):
-        """ Numerical Differentiation
-        Note: we are passing in the effor function for the model we are using, but
-        we can substitute the error for the actual model function
-            error(x + delta) - error(x) <==> f(x + delta) - f(x)
-        :param params: values to be used in model
-        :param args: input (x) and observations (y)
-        :param error_function: function used to determine error based on params and observations
-        :return: The jacobian for the error_function
-        """
         delta_factor = 1e-3
         min_delta = 1e-3
 
@@ -52,9 +43,10 @@ class LevenbergMarquardtOptimization:
             y_1 = self.model.list_of_abs_difference([self.model.k0, *params_star])
 
             # Update Jacobian with gradients
-            diff = y_0 - y_1
-            J[i] = diff / delta
+            J[i] = (y_0 - y_1) / delta
 
+        # J[0] = self.model.partial_derivative_e_2([self.model.k0, *params])
+        # J[1] = self.model.partial_derivative_w_2([self.model.k0, *params])
         return J
 
     def solve(self):
