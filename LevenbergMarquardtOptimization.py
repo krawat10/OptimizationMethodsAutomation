@@ -1,11 +1,8 @@
-import typing
+import numpy as np
+from numpy import inner, diag, eye
+from numpy.linalg import norm, solve
 
 from Model import Model
-import numpy as np
-from numpy import inner, max, diag, eye, Inf, dot
-from numpy.linalg import norm, solve
-import time
-
 from Plotter import Plotter
 
 
@@ -14,10 +11,11 @@ class LevenbergMarquardtOptimization:
         self.model = model
         self.plotter = Plotter(model)
 
+    # Not used function - for presentation purpose only
     def numerical_differentiation2(self, params):
         J = np.empty(shape=(len(params), self.model.size))
-        J[0] = self.model.partial_derivative_e([self.model.k0, *params])
-        J[1] = self.model.partial_derivative_w([self.model.k0, *params])
+        J[0] = self.model.partial_derivative_e_2([self.model.k0, *params])
+        J[1] = self.model.partial_derivative_w_2([self.model.k0, *params])
 
         return J
 

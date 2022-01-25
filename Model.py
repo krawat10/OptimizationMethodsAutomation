@@ -1,17 +1,10 @@
-import multiprocessing
 from os.path import isfile
 
-from joblib import Parallel, delayed
+import numpy as np
 from numpy import savez_compressed, load
 from pandas import read_csv
-import numpy as np
-from matplotlib.pyplot import xlim
-import matplotlib.pyplot as plt
-from scipy.integrate import odeint, solve_ivp
 from scipy import misc
-from scipy import signal
-
-from scipy.optimize import minimize, leastsq
+from scipy.integrate import odeint
 
 
 class Model:
@@ -27,9 +20,6 @@ class Model:
 
     def __init__(self):
         csv = read_csv('gr5.csv')
-
-        # if size is None:
-        #     size = csv.shape[0]
 
         self.data = csv.tail(4500).reset_index(drop=True)
         self.size: int = self.data.shape[0]
@@ -114,26 +104,15 @@ class Model:
         print(f'J: {indicator} for k: {p[0]}, e:{p[1]}, w:{p[2]}')
         return indicator
 
-    def abs_quality_indicator(self, p):
-        indicator = np.sum(self.list_of_abs_difference(p))
-        print(f'J: {indicator} for k: {p[0]}, e:{p[1]}, w:{p[2]}')
-        return indicator
-
     def list_of_square_difference(self, p):
         y, dy, ddy = self.integrate(p)
 
         return np.power((y - self.data['y']), 2)
 
-    def list_of_abs_difference(self, p):
-        y, dy, ddy = self.integrate(p)
-
-        return np.abs(self.data['y'] - y)
-
     def list_of_difference(self, p):
         y, dy, ddy = self.integrate(p)
 
         return self.data['y'] - y
-
 
     def gain_func_partial_derivative(self, var, p, dx=1e-1):
         args = p[:]
@@ -145,35 +124,6 @@ class Model:
         # analitycs (manual)
         derivative = misc.derivative(wraps, p[var], dx=dx)
         return derivative
-
-    def partial_derivative_e(self, p):
-        k, e, w = p
-        m, dmdt, d2mdt2 = self.integrate(p)
-
-        dmde = -(2 * self.data['dm']) / w
-
-        # ((y - m)^2)'
-        # (y^2 - 2ym + m^2)'
-        # -2ym' + (m^2)'
-        # -2ym' + 2mm'
-        square_partial = -2 * self.data['y'] * dmde + 2 * m * dmde
-
-        return square_partial
-
-    def partial_derivative_w(self, p):
-        k, e, w = p
-        m, dmdt, d2mdt2 = self.integrate(p)
-        u = self.data['u']
-
-        dmdw = (-2 * k * u) / (w ** 3) + (2 * d2mdt2) / (w ** 3) + (2 * e * dmdt) / (w ** 2)
-        # ((y - m)^2)'
-        # (y^2 - 2ym + m^2)'
-        # (-2ym + m^2)'
-        # -2ym' + (m^2)'
-        # -2ym' + 2mm'
-        square_partial = -2 * self.data['y'] * dmdw + 2 * m * dmdw
-
-        return square_partial
 
     def partial_derivative_w_2(self, p):
         k, e, w = p
@@ -209,22 +159,21 @@ class Model:
 
         def e_partial_model(solve, e, params):
             k, w, idx = params
-
+            u = self.u(idx)
             # Unpack states
-            y, dyde = solve  # vyk, xyk, vr
+            x, v, dxde, dvde = solve  # vyk, xyk, vr
 
-            v = self.data['dm'][idx]
-            x = self.data['m'][idx]
+            # v = self.data['dm'][idx]
+            # x = self.data['ddm'][idx]
 
             # Calculate derivatives as defined by the state equations ODEs
-            dy2de = -2 * e * w * dyde - 2 * w * v - w ** 2 * y  # best
-            return [dyde, dy2de]
+            dvdt = k * u - 2 * e * w * v - w ** 2 * x
+            dxdt = v
+            DdxdeDt = dvde
+            DdvdeDt = -2 * w * (v + w * (dxde)) - w ** 2 * dxde
+            return [dxdt, dvdt, DdxdeDt, DdvdeDt]
 
-        dmde = np.zeros(self.size)
+        result = odeint(e_partial_model, [0, 0, 0, 0], self.data['t'].values, args=(p,))
+        dmde = result[:, 2]
 
-        for i in range(0, self.size):
-            params = [k, w, i]
-            arr = odeint(e_partial_model, [0, 0], [0, 0.1, e - 0.1, e], args=(params,))
-            dmde[i] = arr[-1, 0]
-
-        return -2 * self.data['y'] * dmde + 2 * m * dmde
+        return 2 * (self.data['y'] - m) * dmde

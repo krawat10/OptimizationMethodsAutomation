@@ -43,13 +43,6 @@ class MinimizeOptimization:
         print('MinimizeOptimization')
         x0 = np.array([self.model.k0, self.model.e0, self.model.w0])
 
-        # # initial params
-        # self.model.integrate3(x0)
-        # self.model.plot(x0, 'using signal.TransferFunction')
-        #
-        # self.model.integrate2(x0)
-        # self.model.plot(x0, 'using signal.StateSpace')
-
         self.model.integrate(x0)
         self.plotter.plot(x0, 'using odeint')
 
@@ -60,7 +53,7 @@ class MinimizeOptimization:
         # self.model.plot(result, 'Step')
 
         # optimization
-        result = minimize(self.model.quality_indicator, x0, method='Nelder-Mead')
+        # result = minimize(self.model.quality_indicator, x0, method='Nelder-Mead')
         # self.model.k0, self.model.e0, self.model.w0 = result.x
         # print('finish optimization (minimize)')
         # print(f'Optimization for k:{self.model.k0:.8f}, e:{self.model.e0:.8f}, w:{self.model.w0:.8f}')
