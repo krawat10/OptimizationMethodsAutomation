@@ -1,9 +1,5 @@
-import math
-
 import numpy as np
-import typing
 from matplotlib import pyplot as plt
-from scipy import misc
 
 from Model import Model
 
@@ -14,12 +10,11 @@ class Plotter:
 
     def plot(self, p, title):
         time = self.model.data['t'].values
-        m, dm, ddm = self.model.integrate(p)
+        m, dm = self.model.integrate(p)
         plt.figure(1)
         plt.plot(time, m, 'r--', linewidth=1, label='m(t)')
         plt.plot(time, self.model.data['y'].values, 'b-', linewidth=1, label='y(t)')
         plt.plot(time, self.model.data['u'].values, 'g-', linewidth=1, label='u(t)')
-        # plt.xlim([0, max(self.data['t'].head(400).values)])
         plt.legend(loc="upper right")
         plt.ylim([-0.2, 0.2])
         plt.xlabel('Time')

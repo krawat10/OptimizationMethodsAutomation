@@ -80,34 +80,27 @@ class Model:
 
     def integrate(self, p):
         y = np.zeros(self.size)
-        k, e, w = p
         self.data['m'] = np.zeros(self.size)
+
         # initial y value
         y[0] = self.data['y'][0]
 
         # set initial y and dy
         x0 = [y[0], 0]
+        result = odeint(self.model, x0, self.data['t'].values, args=(p,))
 
-        # self.model -> dx2dt = (k * u) - (2 * e * w * dxdt) - (w ** 2 * x)
-        x = odeint(self.model, x0, self.data['t'].values, args=(p,))
-
-        self.data['m'] = x[:, 0]
-        self.data['dm'] = x[:, 1]
-        self.data['ddm'] = (k * self.data['u']) - (2 * e * w * self.data['dm']) - (w ** 2 * self.data['m'])
-        y = x[:, 0]
-        dy = x[:, 1]
-        ddy = self.data['ddm']
-        return [y, dy, ddy]
+        self.data['m'] = result[:, 0]
+        self.data['dm'] = result[:, 1]
+        y = result[:, 0]
+        dy = result[:, 1]
+        return [y, dy]
 
     def quality_indicator(self, p):
-        indicator = np.sum(self.list_of_square_difference(p))
+        y, dy = self.integrate(p)
+
+        indicator = np.sum(np.power((y - self.data['y']), 2))
         print(f'J: {indicator} for k: {p[0]}, e:{p[1]}, w:{p[2]}')
         return indicator
-
-    def list_of_square_difference(self, p):
-        y, dy, ddy = self.integrate(p)
-
-        return np.power((y - self.data['y']), 2)
 
     def list_of_difference(self, p):
         y, dy, ddy = self.integrate(p)
@@ -124,56 +117,3 @@ class Model:
         # analitycs (manual)
         derivative = misc.derivative(wraps, p[var], dx=dx)
         return derivative
-
-    def partial_derivative_w_2(self, p):
-        k, e, w = p
-        m, dmdt, d2mdt2 = self.integrate(p)
-
-        def w_partial_model(solve, w, params):
-            k, e, idx = params
-
-            # Unpack states
-            y, dydw = solve
-            v = self.data['dm'][idx]
-            x = self.data['m'][idx]
-
-            # Calculate derivatives
-            dy2dw = -2 * e * w * dydw - 2 * e * v - w ** 2 * y - 2 * w * x  # best
-            return [dydw, dy2dw]
-
-        dmdw = np.zeros(self.size)
-
-        for i in range(0, self.size):
-            params = [k, e, i]
-            arr = odeint(w_partial_model, [0, 0], [0, 0.1, w - 0.1, w], args=(params,))
-
-            dmdw[i] = arr[-1, 0]
-
-        square_partial = -2 * self.data['y'] * dmdw + 2 * m * dmdw
-
-        return square_partial
-
-    def partial_derivative_e_2(self, p):
-        k, e, w = p
-        m, dmdt, d2mdt2 = self.integrate(p)
-
-        def e_partial_model(solve, e, params):
-            k, w, idx = params
-            u = self.u(idx)
-            # Unpack states
-            x, v, dxde, dvde = solve  # vyk, xyk, vr
-
-            # v = self.data['dm'][idx]
-            # x = self.data['ddm'][idx]
-
-            # Calculate derivatives as defined by the state equations ODEs
-            dvdt = k * u - 2 * e * w * v - w ** 2 * x
-            dxdt = v
-            DdxdeDt = dvde
-            DdvdeDt = -2 * w * (v + w * (dxde)) - w ** 2 * dxde
-            return [dxdt, dvdt, DdxdeDt, DdvdeDt]
-
-        result = odeint(e_partial_model, [0, 0, 0, 0], self.data['t'].values, args=(p,))
-        dmde = result[:, 2]
-
-        return 2 * (self.data['y'] - m) * dmde

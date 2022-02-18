@@ -1,12 +1,9 @@
-import operator
-
-import matplotlib.pyplot as plt
-import numpy as np
 import typing
 
+import numpy as np
 from joblib import Parallel, delayed
 from scipy.optimize import minimize
-from cython.parallel import prange
+
 from Model import Model
 from Plotter import Plotter
 
@@ -53,8 +50,8 @@ class MinimizeOptimization:
         # self.model.plot(result, 'Step')
 
         # optimization
-        # result = minimize(self.model.quality_indicator, x0, method='Nelder-Mead')
-        # self.model.k0, self.model.e0, self.model.w0 = result.x
-        # print('finish optimization (minimize)')
-        # print(f'Optimization for k:{self.model.k0:.8f}, e:{self.model.e0:.8f}, w:{self.model.w0:.8f}')
-        # self.plotter.plot(result.x, 'Nelder-Mead')
+        result = minimize(self.model.quality_indicator, x0, method='Nelder-Mead')
+        self.model.k0, self.model.e0, self.model.w0 = result.x
+        print('finish optimization (minimize)')
+        print(f'Optimization for k:{self.model.k0:.8f}, e:{self.model.e0:.8f}, w:{self.model.w0:.8f}')
+        self.plotter.plot(result.x, 'Nelder-Mead')

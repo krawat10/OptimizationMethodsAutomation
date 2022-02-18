@@ -9,7 +9,7 @@ from SteepestDescentOptimization import SteepestDescentOptimization
 
 model = Model()
 model.generate_mesh()
-# MinimizeOptimization(model).solve()
+MinimizeOptimization(model).solve()
 Plotter(model).plot([model.k0, model.e0, model.w0], 'Example ')
 Plotter(model).e_w_solve_area()
 Plotter(model).e_w_gradient_area([], f'Solve area for k={model.k0}')

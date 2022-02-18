@@ -11,20 +11,12 @@ class LevenbergMarquardtOptimization:
         self.model = model
         self.plotter = Plotter(model)
 
-    # Not used function - for presentation purpose only
-    def numerical_differentiation2(self, params):
-        J = np.empty(shape=(len(params), self.model.size))
-        J[0] = self.model.partial_derivative_e_2([self.model.k0, *params])
-        J[1] = self.model.partial_derivative_w_2([self.model.k0, *params])
-
-        return J
-
     def numerical_differentiation(self, params):
         delta_factor = 1e-4
         min_delta = 1e-4
 
         # Get response with given params
-        y_0, dy_0, ddy_0 = self.model.integrate([self.model.k0, *params])
+        y_0, dy_0 = self.model.integrate([self.model.k0, *params])
 
         # Initialize Jacobian Matrix
         J = np.empty(shape=(len(params),) + y_0.shape, dtype=np.float)
@@ -40,7 +32,7 @@ class LevenbergMarquardtOptimization:
             new_params[i] += delta
 
             # Get response for f(x, B + delta)
-            y_1, dy_1, ddy_1 = self.model.integrate([self.model.k0, *new_params])
+            y_1, dy_1 = self.model.integrate([self.model.k0, *new_params])
 
             # Update Jacobian with partial derivatives
             J[i] = (y_1 - y_0) / delta
